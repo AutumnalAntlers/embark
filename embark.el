@@ -1239,21 +1239,26 @@ UPDATE is the indicator update function."
       ((or 'embark-keymap-help
            (and 'nil            ; cmd is nil but last key is help-char
                 (guard (eq help-char (aref keys (1- (length keys)))))))
-       (let ((embark-indicators
-              (cl-set-difference embark-indicators
-                                 '(embark-verbose-indicator
-                                   embark-mixed-indicator)))
-             (prefix-map
-              (if (eq cmd 'embark-keymap-help)
-                  keymap
-                (let ((overriding-terminal-local-map keymap))
-                  (key-binding (seq-take keys (1- (length keys)))
-                               'accept-default))))
-             (prefix-arg prefix-arg)) ; preserve prefix arg
-         (when-let ((win (get-buffer-window embark--verbose-indicator-buffer
-                                            'visible)))
-           (quit-window 'kill-buffer win))
-         (embark-completing-read-prompter prefix-map update)))
+       (if (memq 'embark-which-key-indicator embark-indicators)
+           ;; Issue #647: This branch is a dirty fix for users who
+           ;; copy `embark-which-key-indicator' from the embark wiki.
+           (progn (which-key-C-h-dispatch)
+                  (embark-keymap-prompter keymap update))
+         (let ((embark-indicators
+                (cl-set-difference embark-indicators
+                                   '(embark-verbose-indicator
+                                     embark-mixed-indicator)))
+               (prefix-map
+                (if (eq cmd 'embark-keymap-help)
+                    keymap
+                  (let ((overriding-terminal-local-map keymap))
+                    (key-binding (seq-take keys (1- (length keys)))
+                                 'accept-default))))
+               (prefix-arg prefix-arg)) ; preserve prefix arg
+           (when-let ((win (get-buffer-window embark--verbose-indicator-buffer
+                                              'visible)))
+             (quit-window 'kill-buffer win))
+           (embark-completing-read-prompter prefix-map update))))
       ((or 'universal-argument 'universal-argument-more
            'negative-argument 'digit-argument 'embark-toggle-quit)
        ;; prevent `digit-argument' from modifying the overriding map
