@@ -1236,9 +1236,16 @@ UPDATE is the indicator update function."
     ;; you might run consult-narrow through the embark-keymap-prompter.
     (setq last-command-event (aref keys (1- (length keys))))
     (pcase cmd
+      ;; Issue #647: Support pagation for users copying
+      ;; `embark-which-key-indicator' from the embark wiki.
+      ((guard (eq 'which-key-C-h-dispatch
+                  (lookup-key keymap
+                              (vector last-command-event))))
+       (funcall 'which-key-C-h-dispatch)
+       (embark-keymap-prompter keymap update))
       ((or 'embark-keymap-help
            (and 'nil            ; cmd is nil but last key is help-char
-                (guard (eq help-char (aref keys (1- (length keys)))))))
+                (guard (eq help-char last-command-event))))
        (let ((embark-indicators
               (cl-set-difference embark-indicators
                                  '(embark-verbose-indicator
